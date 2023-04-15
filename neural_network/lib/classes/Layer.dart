@@ -1,0 +1,73 @@
+import 'dart:math';
+import 'package:ml_linalg/linalg.dart';
+import 'package:neural_network/classes/ActivationFuntion.dart';
+import 'package:neural_network/classes/NeuralNetwork.dart';
+import 'package:neural_network/classes/Neuron.dart';
+
+class Layer {
+  final NeuralNetwork neuralNetwork;
+  final int layerNr;
+  final int inputSize; // I
+  final int outputSize; // J
+  final double Function(double) activationFunction = sigmoid;
+  final double Function(double) derivativeActivationFunction =
+      sigmoidDerivative;
+  bool applyActivationFuction = true;
+  late List<List<double>> weights; // IxJ
+  late List<double> biases; // Jx1
+  late List<Neuron> neurons;
+  late bool isInputLayer;
+
+  Layer(this.neuralNetwork, this.inputSize, this.outputSize, this.layerNr) {
+    weights = initializeWeights();
+    biases = initializeBiases();
+    neurons = initializeNeurons(outputSize);
+    isInputLayer = layerNr == 0;
+  }
+
+  // Initialize variables
+  // ---------------------------------------------------------------------------
+  List<List<double>> initializeWeights() {
+    return List.generate(inputSize,
+        (i) => List.generate(outputSize, (j) => Random().nextDouble() - 0.5));
+  }
+
+  List<double> initializeBiases() {
+    return List.generate(outputSize, (j) => Random().nextDouble() - 0.5);
+  }
+
+  List<Neuron> initializeNeurons(int inputSize) {
+    return List.generate(
+        inputSize, (int i) => Neuron(neuralNetwork, 0, [layerNr, i]));
+  }
+
+  // Forward Propagation
+  // ---------------------------------------------------------------------------
+  List<double> forward(List<double> inputs) {
+    assert(inputs.length == inputSize,
+        'ERROR: Specified inputs do not correspond with inputSize');
+
+    if (isInputLayer) {
+      for (int j = 0; j < outputSize; j++) {
+        neurons[j].setValue(inputs[j]);
+      }
+      return inputs;
+    }
+
+    Matrix weightMatrix = Matrix.fromList(weights);
+    Matrix biasMatrix = Matrix.column(biases);
+    Matrix inputMatrix = Matrix.column(inputs);
+
+    Matrix outputMatrix = weightMatrix.transpose() * inputMatrix + biasMatrix;
+    List<double> outputs = outputMatrix.expand((row) => row).toList();
+    if (applyActivationFuction) {
+      outputs.map((output) => activationFunction(output));
+
+      for (int j = 0; j < outputSize; j++) {
+        neurons[j].setValue(activationFunction(outputs[j]));
+      }
+    }
+
+    return outputs;
+  }
+}
