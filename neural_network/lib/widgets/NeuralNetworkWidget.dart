@@ -27,22 +27,114 @@ class NeuralNetworkWidget extends StatelessWidget {
       body: Row(
         children: widgetList,
       ),
-      floatingActionButton: FloatingActionButton(onPressed: () {
-        List<double> input = [Random().nextDouble(), Random().nextDouble()];
-        // Calculate new node values
-        neuralNetwork.forward(input);
-        neuralNetwork.train([
-          [0, 0],
-          [1, 0],
-          [0, 1],
-          [1, 1]
-        ], [
-          [0],
-          [1],
-          [1],
-          [0]
-        ]);
-      }),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                child: Container(
+                  width: 80,
+                  alignment: Alignment.center,
+                  child: Text('simulate'),
+                ),
+                onPressed: () {
+                  List<double> input = [
+                    Random().nextInt(2).toDouble(),
+                    Random().nextInt(2).toDouble(),
+                  ];
+                  // Calculate new node values
+                  neuralNetwork.forward(input);
+                }),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                child: Container(
+                  width: 80,
+                  alignment: Alignment.center,
+                  child: Text('train'),
+                ),
+                onPressed: () async {
+                  List<double> errorList = neuralNetwork.train([
+                    [0, 0],
+                    [1, 0],
+                    [0, 1],
+                    [1, 1]
+                  ], [
+                    [0],
+                    [1],
+                    [1],
+                    [0]
+                  ]);
+                  await showDialog(
+                    context: context,
+                    builder: (_) => AlertDialog(
+                      content: SizedBox(
+                        child: CustomPaint(painter: GraphPainter(errorList)),
+                      ),
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: Text('Close'),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                child: Container(
+                  width: 80,
+                  alignment: Alignment.center,
+                  child: Text('plotWeights'),
+                ),
+                onPressed: () {
+                  for (var layer in neuralNetwork.layers) {
+                    print('Layer: ${layer.layerNr}');
+                    print('Weight: ${layer.weights}');
+                    print('Biases: ${layer.biases}\n');
+                  }
+                }),
+          ),
+        ],
+      ),
     );
   }
+}
+
+class GraphPainter extends CustomPainter {
+  final List<double> data;
+  final double maxData;
+
+  GraphPainter(this.data)
+      : maxData = data.reduce((max, value) => max > value ? max : value);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.blue
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+
+    final xStep = size.width / (data.length - 1);
+    final yStep = size.height / maxData;
+
+    path.moveTo(0, size.height);
+
+    for (int i = 0; i < data.length; i++) {
+      final x = i * xStep;
+      final y = size.height - (data[i] * yStep);
+      path.lineTo(x, y);
+    }
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

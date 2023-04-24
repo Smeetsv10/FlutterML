@@ -1,22 +1,18 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:ml_linalg/linalg.dart';
-import 'package:neural_network/classes/ActivationFuntion.dart';
 import 'package:neural_network/classes/Layer.dart';
-import 'package:neural_network/classes/Neuron.dart';
-import 'package:neural_network/main.dart';
 
 class NeuralNetwork extends ChangeNotifier {
   final List<int> _layerSizes;
   late List<Layer> _layers;
   final double learningRate;
-  double epochs = 1e4;
+  double epochs = 1e5;
 
   List<int> get layerSizes => _layerSizes;
   List<Layer> get layers => _layers;
 
-  NeuralNetwork(this._layerSizes, {this.learningRate = 1e-3}) {
+  NeuralNetwork(this._layerSizes, {this.learningRate = 1e-2}) {
     buildLayers();
   }
 
@@ -41,74 +37,95 @@ class NeuralNetwork extends ChangeNotifier {
     return outputs;
   }
 
-  void backward(List<double> inputs, List<double> outputs) {
+  double backward(List<double> inputs, List<double> outputs) {
     assert(inputs.length == _layers.first.inputSize);
     assert(outputs.length == _layers.last.outputSize);
 
+    Matrix inputMatrix = Matrix.column(inputs);
+    Matrix outputMatrix = Matrix.column(outputs);
     List<double> estimation = forward(inputs);
-    List<double> a1 = List.generate(
-        _layers[1].outputSize, (index) => _layers[1].neurons[index].value);
-    List<double> a2 = List.generate(
-        _layers[2].outputSize, (index) => _layers[2].neurons[index].value);
+    Matrix estimationMatrix = Matrix.column(estimation);
+    Matrix errorMatrix = estimationMatrix - outputMatrix;
+    List<double> hiddenOutputs = _layers[1].output();
+    Matrix hiddenMatrix = _layers[1].outputMatrix();
 
-    List<double> dZ2 = subtractLists(a2, outputs);
-    List<double> db2 = List.filled(_layerSizes[2], 0);
-    List<List<double>> dW2 =
-        List.generate(a1.length, (index) => List.filled(a2.length, 0));
+    // Calculate output of the Lauers withoud sigmoid applied
+    List<double> inputsSummed = _layers[1].summedInputs(inputs);
+    List<double> hiddenOutputsSummed = _layers[2].summedInputs(hiddenOutputs);
 
-    for (var j = 0; j < a2.length; j++) {
-      for (var i = 0; i < a1.length; i++) {
-        dW2[i][j] = (1 / inputs.length) * dZ2[j] * a1[i] * (1 - a1[i]);
-        db2[j] += dW2[i][j];
-      }
-    }
-    List<double> dZ1 = List.generate(a1.length, (index) => 0);
-    for (var i = 0; i < inputs.length; i++) {
-      for (var j = 0; j < a1.length; j++) {
-        dZ1[i] =
-            _layers[1].weights[i][j] * dZ1[j] * inputs[i] * (1 - inputs[i]);
-      }
-    }
-    List<double> db1 = List.filled(_layerSizes[1], 0);
-    List<List<double>> dW1 = List.generate(
-        _layerSizes[0], (index) => List.filled(_layerSizes[1], 0));
+    // Calculate derivatives
+    // Matrix dLdW2 = (errorMatrix *
+    //         _layers[2].derivativeActivationFunction(inputsSummed) *
+    //         hiddenMatrix.transpose())
+    //     .transpose();
+    // Matrix dLdB2 =
+    //     errorMatrix * _layers[2].derivativeActivationFunction(inputsSummed);
+    // Matrix dLdW1 = (Matrix.fromList(_layers[2].weights) *
+    //         dLdB2 *
+    //         _layers[1].derivativeActivationFunction(hiddenOutputsSummed) *
+    //         inputMatrix.transpose())
+    //     .transpose();
+    // Matrix dLdB1 = Matrix.fromList(_layers[2].weights) *
+    //     dLdB2 *
+    //     _layers[1].derivativeActivationFunction(hiddenOutputsSummed);
+    Matrix dLdW2 = (errorMatrix *
+            Matrix.column(inputsSummed
+                .map((e) => _layers[2].derivativeActivationFunction(e))
+                .toList()) *
+            hiddenMatrix.transpose())
+        .transpose();
+    Matrix dLdB2 = errorMatrix *
+        Matrix.column(inputsSummed
+            .map((e) => _layers[2].derivativeActivationFunction(e))
+            .toList());
+    Matrix dLdW1 = (Matrix.fromList(_layers[2].weights) *
+            dLdB2 *
+            Matrix.column(hiddenOutputsSummed
+                .map((e) => _layers[1].derivativeActivationFunction(e))
+                .toList()) *
+            inputMatrix.transpose())
+        .transpose();
+    Matrix dLdB1 = Matrix.fromList(_layers[2].weights) *
+        dLdB2 *
+        Matrix.column(hiddenOutputsSummed
+            .map((e) => _layers[1].derivativeActivationFunction(e))
+            .toList());
 
-    for (var j = 0; j < a1.length; j++) {
-      for (var i = 0; i < inputs.length; i++) {
-        dW1[i][j] = (1 / inputs.length) * dZ1[j] * inputs[i];
-        db1[j] += dW1[i][j];
-      }
-    }
+    // print('dLdW1: $dLdW1');
+    // print('dLdB1: $dLdB1');
+    // print('dLdW2: $dLdW2');
+    // print('dLdB2: $dLdB2');
+    // print('');
 
-    Matrix dWeightMatrix1 = Matrix.fromList(dW1);
+    // Update weights
     _layers[1].weights =
-        (Matrix.fromList(_layers[1].weights) - dWeightMatrix1 * learningRate)
+        (Matrix.fromList(_layers[1].weights) - dLdW1 * learningRate)
             .toList()
             .map((row) => row.toList())
             .toList();
-    Matrix dWeightMatrix2 = Matrix.fromList(dW2);
+    layers[1].biases = (Matrix.column(_layers[1].biases) - dLdB1 * learningRate)
+        .expand((element) => element)
+        .toList();
     _layers[2].weights =
-        (Matrix.fromList(_layers[2].weights) - dWeightMatrix2 * learningRate)
+        (Matrix.fromList(_layers[2].weights) - dLdW2 * learningRate)
             .toList()
             .map((row) => row.toList())
             .toList();
-    Matrix dBiasMatrix1 = Matrix.column(db1);
-    _layers[1].biases =
-        (Matrix.column(_layers[1].biases) - dBiasMatrix1 * learningRate)
-            .expand((row) => row)
-            .toList();
-    Matrix dBiasMatrix2 = Matrix.column(db2);
-    _layers[2].biases =
-        (Matrix.column(_layers[2].biases) - dBiasMatrix2 * learningRate)
-            .expand((row) => row)
-            .toList();
+    layers[2].biases = (Matrix.column(_layers[2].biases) - dLdB2 * learningRate)
+        .expand((element) => element)
+        .toList();
+
+    return subtractLists(estimation, outputs).fold(0, (a, b) => a + b);
   }
 
-  void train(List<List<double>> inputs, List<List<double>> outputs) {
+  List<double> train(List<List<double>> inputs, List<List<double>> outputs) {
+    List<double> errorList = [];
     for (var j = 0; j < epochs; j++) {
       int index = Random().nextInt(inputs.length);
-      backward(inputs[index], outputs[index]);
+      double error = backward(inputs[index], outputs[index]);
+      errorList.add(error);
     }
+    return errorList;
   }
 
   List<double> subtractLists(List<double> list1, List<double> list2) {

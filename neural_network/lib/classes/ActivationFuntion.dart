@@ -8,7 +8,7 @@ double linearDerivative(double value) {
   return 1;
 }
 
-double sigmoid(double value) {
+double sigmoid(var value) {
   return 1 / (1 + exp(-value));
 }
 

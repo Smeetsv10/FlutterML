@@ -23,8 +23,6 @@ List<List<double>> trainOutputs = [
   [0],
 ];
 
-NeuralNetwork neuralNetwork = NeuralNetwork([2, 2, 3, 1]);
-
 // -----------------------------------------------------------------------------
 // Widgets
 // -----------------------------------------------------------------------------
@@ -34,7 +32,7 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-        create: (_) => NeuralNetwork([2, 3, 1]),
+        create: (_) => NeuralNetwork([2, 1, 1]),
         child: const MaterialApp(home: NeuralNetworkWidget()));
   }
 }

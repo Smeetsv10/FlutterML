@@ -64,10 +64,29 @@ class Layer {
       outputs.map((output) => activationFunction(output));
 
       for (int j = 0; j < outputSize; j++) {
-        neurons[j].setValue(activationFunction(outputs[j]));
+        neurons[j].setValue(outputs[j]);
       }
     }
+    return outputs;
+  }
 
+  List<double> output() {
+    List<double> outputs = [];
+    for (var neuron in neurons) {
+      outputs.add(neuron.value);
+    }
+    return outputs;
+  }
+
+  Matrix outputMatrix() {
+    return Matrix.column(output());
+  }
+
+  List<double> summedInputs(List<double> inputs) {
+    // Forward result without activation fuction applied
+    applyActivationFuction = false;
+    List<double> outputs = forward(inputs);
+    applyActivationFuction = true;
     return outputs;
   }
 }
