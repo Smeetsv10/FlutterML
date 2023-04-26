@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:neural_network/classes/NeuralNetwork.dart';
+import 'package:neural_network/main.dart';
 import 'package:neural_network/widgets/LayerWidget.dart';
 import 'package:provider/provider.dart';
 
@@ -56,31 +57,9 @@ class NeuralNetworkWidget extends StatelessWidget {
                   child: Text('train'),
                 ),
                 onPressed: () async {
-                  List<double> errorList = neuralNetwork.train([
-                    [0, 0],
-                    [1, 0],
-                    [0, 1],
-                    [1, 1]
-                  ], [
-                    [0],
-                    [1],
-                    [1],
-                    [0]
-                  ]);
-                  await showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      content: SizedBox(
-                        child: CustomPaint(painter: GraphPainter(errorList)),
-                      ),
-                      actions: [
-                        ElevatedButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: Text('Close'),
-                        ),
-                      ],
-                    ),
-                  );
+                  List<double> errorList =
+                      neuralNetwork.train(trainInputs, trainOutputs);
+                  // print(errorList);
                 }),
           ),
           Padding(
@@ -92,10 +71,31 @@ class NeuralNetworkWidget extends StatelessWidget {
                   child: Text('plotWeights'),
                 ),
                 onPressed: () {
-                  for (var layer in neuralNetwork.layers) {
+                  for (var layer in neuralNetwork.layers.sublist(1)) {
                     print('Layer: ${layer.layerNr}');
-                    print('Weight: ${layer.weights}');
+                    print('Weights: ${layer.weights}');
                     print('Biases: ${layer.biases}\n');
+                    print('\n');
+                  }
+                }),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                child: Container(
+                  width: 80,
+                  alignment: Alignment.center,
+                  child: Text('Randomize'),
+                ),
+                onPressed: () {
+                  for (var layer in neuralNetwork.layers.sublist(1)) {
+                    layer.biases = layer.initializeBiases();
+                    layer.weights = layer.initializeWeights();
+                    print('Layer: ${layer.layerNr}');
+                    print('new Weights: ${layer.weights}');
+                    print('new Biases: ${layer.biases}\n');
+                    print('\n');
+                    neuralNetwork.notifyListeners();
                   }
                 }),
           ),

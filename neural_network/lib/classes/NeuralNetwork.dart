@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:ml_linalg/linalg.dart';
 import 'package:neural_network/classes/Layer.dart';
@@ -12,7 +11,7 @@ class NeuralNetwork extends ChangeNotifier {
   List<int> get layerSizes => _layerSizes;
   List<Layer> get layers => _layers;
 
-  NeuralNetwork(this._layerSizes, {this.learningRate = 1e-2}) {
+  NeuralNetwork(this._layerSizes, {this.learningRate = 1e5}) {
     buildLayers();
   }
 
@@ -26,11 +25,11 @@ class NeuralNetwork extends ChangeNotifier {
   }
 
   List<double> forward(List<double> inputs) {
-    assert(inputs.length == layers.first.inputSize,
+    assert(inputs.length == _layers.first.inputSize,
         'ERROR: specified inputs size not same as inputLayer');
 
     List<double> outputs = inputs;
-    for (Layer layer in layers) {
+    for (Layer layer in _layers) {
       outputs = layer.forward(outputs);
     }
     notifyListeners();
@@ -47,55 +46,31 @@ class NeuralNetwork extends ChangeNotifier {
     Matrix estimationMatrix = Matrix.column(estimation);
     Matrix errorMatrix = estimationMatrix - outputMatrix;
     List<double> hiddenOutputs = _layers[1].output();
-    Matrix hiddenMatrix = _layers[1].outputMatrix();
+    Matrix hiddenMatrix = Matrix.column(hiddenOutputs);
 
     // Calculate output of the Lauers withoud sigmoid applied
     List<double> inputsSummed = _layers[1].summedInputs(inputs);
     List<double> hiddenOutputsSummed = _layers[2].summedInputs(hiddenOutputs);
 
     // Calculate derivatives
-    // Matrix dLdW2 = (errorMatrix *
-    //         _layers[2].derivativeActivationFunction(inputsSummed) *
-    //         hiddenMatrix.transpose())
-    //     .transpose();
-    // Matrix dLdB2 =
-    //     errorMatrix * _layers[2].derivativeActivationFunction(inputsSummed);
-    // Matrix dLdW1 = (Matrix.fromList(_layers[2].weights) *
-    //         dLdB2 *
-    //         _layers[1].derivativeActivationFunction(hiddenOutputsSummed) *
-    //         inputMatrix.transpose())
-    //     .transpose();
-    // Matrix dLdB1 = Matrix.fromList(_layers[2].weights) *
-    //     dLdB2 *
-    //     _layers[1].derivativeActivationFunction(hiddenOutputsSummed);
-    Matrix dLdW2 = (errorMatrix *
-            Matrix.column(inputsSummed
-                .map((e) => _layers[2].derivativeActivationFunction(e))
-                .toList()) *
-            hiddenMatrix.transpose())
-        .transpose();
-    Matrix dLdB2 = errorMatrix *
-        Matrix.column(inputsSummed
-            .map((e) => _layers[2].derivativeActivationFunction(e))
-            .toList());
-    Matrix dLdW1 = (Matrix.fromList(_layers[2].weights) *
-            dLdB2 *
-            Matrix.column(hiddenOutputsSummed
-                .map((e) => _layers[1].derivativeActivationFunction(e))
-                .toList()) *
-            inputMatrix.transpose())
-        .transpose();
-    Matrix dLdB1 = Matrix.fromList(_layers[2].weights) *
-        dLdB2 *
-        Matrix.column(hiddenOutputsSummed
-            .map((e) => _layers[1].derivativeActivationFunction(e))
-            .toList());
+    Matrix dsigmadz = Matrix.column(hiddenOutputsSummed
+        .map((e) => _layers[2].derivativeActivationFunction(e))
+        .toList());
+    Matrix dLdB2 = errorMatrix * dsigmadz;
+    Matrix dLdW2 = (dLdB2 * hiddenMatrix.transpose()).transpose();
 
-    // print('dLdW1: $dLdW1');
-    // print('dLdB1: $dLdB1');
-    // print('dLdW2: $dLdW2');
-    // print('dLdB2: $dLdB2');
-    // print('');
+    List<List<double>> weight2 = _layers[2].weights;
+    List<double> dsigmadv = inputsSummed
+        .map((e) => _layers[1].derivativeActivationFunction(e))
+        .toList();
+    for (var i_row = 0; i_row < hiddenOutputs.length; i_row++) {
+      for (var i_col = 0; i_col < outputs.length; i_col++) {
+        weight2[i_row][i_col] *= dsigmadv[i_row];
+      }
+    }
+    Matrix weightMat2 = Matrix.fromList(weight2).transpose();
+    Matrix dLdW1 = inputMatrix * dLdB2 * weightMat2;
+    Matrix dLdB1 = (dLdB2 * weightMat2).transpose();
 
     // Update weights
     _layers[1].weights =
@@ -103,27 +78,30 @@ class NeuralNetwork extends ChangeNotifier {
             .toList()
             .map((row) => row.toList())
             .toList();
-    layers[1].biases = (Matrix.column(_layers[1].biases) - dLdB1 * learningRate)
-        .expand((element) => element)
-        .toList();
+    _layers[1].biases =
+        (Matrix.column(_layers[1].biases) - dLdB1 * learningRate)
+            .expand((element) => element)
+            .toList();
     _layers[2].weights =
         (Matrix.fromList(_layers[2].weights) - dLdW2 * learningRate)
             .toList()
             .map((row) => row.toList())
             .toList();
-    layers[2].biases = (Matrix.column(_layers[2].biases) - dLdB2 * learningRate)
-        .expand((element) => element)
-        .toList();
-
-    return subtractLists(estimation, outputs).fold(0, (a, b) => a + b);
+    _layers[2].biases =
+        (Matrix.column(_layers[2].biases) - dLdB2 * learningRate)
+            .expand((element) => element)
+            .toList();
+    return errorMatrix.sum();
   }
 
   List<double> train(List<List<double>> inputs, List<List<double>> outputs) {
     List<double> errorList = [];
     for (var j = 0; j < epochs; j++) {
-      int index = Random().nextInt(inputs.length);
-      double error = backward(inputs[index], outputs[index]);
-      errorList.add(error);
+      for (var i = 0; i < inputs.length; i++) {
+        // int index = Random().nextInt(inputs.length);
+        double error = backward(inputs[i], outputs[i]);
+        errorList.add(error);
+      }
     }
     return errorList;
   }

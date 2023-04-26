@@ -29,7 +29,7 @@ class Layer {
   // ---------------------------------------------------------------------------
   List<List<double>> initializeWeights() {
     return List.generate(inputSize,
-        (i) => List.generate(outputSize, (j) => Random().nextDouble() - 0.5));
+        (i) => List.generate(outputSize, (j) => Random().nextDouble() + 0.5));
   }
 
   List<double> initializeBiases() {
@@ -61,9 +61,8 @@ class Layer {
     Matrix outputMatrix = weightMatrix.transpose() * inputMatrix + biasMatrix;
     List<double> outputs = outputMatrix.expand((row) => row).toList();
     if (applyActivationFuction) {
-      outputs.map((output) => activationFunction(output));
-
       for (int j = 0; j < outputSize; j++) {
+        outputs[j] = activationFunction(outputs[j]);
         neurons[j].setValue(outputs[j]);
       }
     }

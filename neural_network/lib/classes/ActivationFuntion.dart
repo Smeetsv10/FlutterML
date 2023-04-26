@@ -13,9 +13,20 @@ double sigmoid(var value) {
 }
 
 double sigmoidDerivative(double value) {
+  // return value * (1 - value);
   return sigmoid(value) * (1 - sigmoid(value));
 }
 
-double inverseSigmoid(double value) {
-  return -log(1 / value - 1);
+double reLu(double value) {
+  if (value >= 0) {
+    return value;
+  }
+  return 0;
+}
+
+double reLuDerivative(double value) {
+  if (value >= 0) {
+    return 1;
+  }
+  return 0;
 }
