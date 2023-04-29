@@ -4,14 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:ml_linalg/linalg.dart';
 import 'package:neural_network/classes/Layer.dart';
 
-class NeuralNetwork extends ChangeNotifier {
+class NeuralNetwork with ChangeNotifier {
   final List<int> _layerSizes;
   late List<Layer> _layers;
   final double learningRate;
+  bool _isTraining = false;
   double epochs = 1e4;
 
   List<int> get layerSizes => _layerSizes;
   List<Layer> get layers => _layers;
+  bool get isTraining => _isTraining;
 
   NeuralNetwork(this._layerSizes, {this.learningRate = 1e0}) {
     buildLayers();
@@ -101,27 +103,41 @@ class NeuralNetwork extends ChangeNotifier {
         vector2List(Matrix.row(_layers[2].biases) - dLdB2 * learningRate);
   }
 
-  void train(List<List<double>> inputs, List<List<double>> outputs) {
+  void train(List<List<double>> inputs, List<List<double>> outputs) async {
     for (var j = 0; j < epochs; j++) {
       List<Matrix> totalGradients = [];
+      double error = 0;
+      _isTraining = true;
 
       for (var i = 0; i < inputs.length; i++) {
-        // int index = Random().nextInt(inputs.length);
         List<Matrix> gradients = backward(inputs[i], outputs[i]);
-        int m = gradients.length;
+        double tmpError = List.generate(outputs[i].length,
+                (index) => _layers.last.output()[index] - outputs[i][index])
+            .fold(0, (a, b) => a + b);
+        if (tmpError > error) {
+          error = tmpError;
+        }
 
         if (i == 0) {
-          for (var i = 0; i < m; i++) {
-            totalGradients[i] = gradients[i] * 1 / m;
-          }
+          totalGradients = gradients;
         } else {
-          for (var i = 0; i < m; i++) {
-            totalGradients[i] += gradients[i] * 1 / m;
+          for (var i = 0; i < gradients.length; i++) {
+            totalGradients[i] += gradients[i];
           }
         }
       }
+      for (Matrix totalGradient in totalGradients) {
+        totalGradient = totalGradient * (1 / inputs.length);
+      }
       updateWeights(totalGradients);
+
+      if (j % epochs / 1000 == 0 && error > 0.05) {
+        notifyListeners();
+        await Future.delayed(Duration(milliseconds: 100));
+      }
     }
+    _isTraining = false;
+    notifyListeners();
   }
 
   List<double> subtractLists(List<double> list1, List<double> list2) {

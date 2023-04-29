@@ -32,9 +32,22 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
 
     return Scaffold(
       backgroundColor: Colors.blueGrey,
-      body: Row(
-        children: widgetList,
-      ),
+      body: neuralNetwork.isTraining
+          ? Stack(
+              children: [
+                const AlertDialog(
+                  content: LinearProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+                  ),
+                ),
+                Row(
+                  children: widgetList,
+                ),
+              ],
+            )
+          : Row(
+              children: widgetList,
+            ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -64,7 +77,7 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
                   alignment: Alignment.center,
                   child: Text('train'),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   neuralNetwork.train(trainInputs, trainOutputs);
                 }),
           ),
