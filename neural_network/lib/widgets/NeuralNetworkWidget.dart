@@ -32,22 +32,17 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
 
     return Scaffold(
       backgroundColor: Colors.blueGrey,
-      body: neuralNetwork.isTraining
-          ? Stack(
-              children: [
-                const AlertDialog(
-                  content: LinearProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-                  ),
-                ),
-                Row(
-                  children: widgetList,
-                ),
-              ],
-            )
-          : Row(
-              children: widgetList,
+      body: Stack(
+        children: [
+          Row(children: widgetList),
+          Visibility(
+            visible: neuralNetwork.isTraining,
+            child: const AlertDialog(
+              content: Text('Updating weights and biases...'),
             ),
+          )
+        ],
+      ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -57,7 +52,7 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
                 child: Container(
                   width: 80,
                   alignment: Alignment.center,
-                  child: Text('simulate'),
+                  child: Text('Simulate'),
                 ),
                 onPressed: () {
                   List<double> input = trainInputs[inputNr];
@@ -75,29 +70,29 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
                 child: Container(
                   width: 80,
                   alignment: Alignment.center,
-                  child: Text('train'),
+                  child: Text('Train'),
                 ),
                 onPressed: () async {
                   neuralNetwork.train(trainInputs, trainOutputs);
                 }),
           ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: ElevatedButton(
-                child: Container(
-                  width: 80,
-                  alignment: Alignment.center,
-                  child: Text('plotWeights'),
-                ),
-                onPressed: () {
-                  for (var layer in neuralNetwork.layers.sublist(1)) {
-                    print('Layer: ${layer.layerNr}');
-                    print('Weights: ${layer.weights}');
-                    print('Biases: ${layer.biases}\n');
-                    print('\n');
-                  }
-                }),
-          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(8.0),
+          //   child: ElevatedButton(
+          //       child: Container(
+          //         width: 80,
+          //         alignment: Alignment.center,
+          //         child: Text('plotWeights'),
+          //       ),
+          //       onPressed: () {
+          //         for (var layer in neuralNetwork.layers.sublist(1)) {
+          //           print('Layer: ${layer.layerNr}');
+          //           print('Weights: ${layer.weights}');
+          //           print('Biases: ${layer.biases}\n');
+          //           print('\n');
+          //         }
+          //       }),
+          // ),
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: ElevatedButton(

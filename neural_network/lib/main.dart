@@ -3,13 +3,9 @@ import 'package:neural_network/classes/NeuralNetwork.dart';
 import 'package:neural_network/widgets/NeuralNetworkWidget.dart';
 import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MainApp());
-}
-
 // -----------------------------------------------------------------------------
-// Classes
-// ------------------------------------------------------------- ----------------
+// Inputs & Outputs
+// -----------------------------------------------------------------------------
 List<List<double>> trainInputs = [
   [0, 0],
   [1, 0],
@@ -22,23 +18,23 @@ List<List<double>> trainOutputs = [
   [1],
   [0],
 ];
-// List<List<double>> trainInputs = [
-//   [1, 0],
-// ];
-// List<List<double>> trainOutputs = [
-//   [1],
-// ];
 
-// -----------------------------------------------------------------------------
-// Widgets
-// -----------------------------------------------------------------------------
+List<int> layers = [2, 4, 3, 1];
+
+void main() {
+  runApp(const MainApp());
+}
+
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-        create: (_) => NeuralNetwork([2, 3, 1]),
-        child: const MaterialApp(home: NeuralNetworkWidget()));
+        create: (_) => NeuralNetwork(layers),
+        child: const MaterialApp(
+          home: NeuralNetworkWidget(),
+          debugShowCheckedModeBanner: false,
+        ));
   }
 }

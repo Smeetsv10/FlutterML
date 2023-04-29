@@ -43,71 +43,77 @@ class NeuralNetwork with ChangeNotifier {
   List<Matrix> backward(List<double> inputs, List<double> outputs) {
     assert(inputs.length == _layers.first.inputSize);
     assert(outputs.length == _layers.last.outputSize);
+    List<Matrix> gradients = [];
 
     Matrix inputMatrix = Matrix.row(inputs); // (1xI)
     Matrix outputMatrix = Matrix.row(outputs);
     List<double> estimation = forward(inputs);
     Matrix estimationMatrix = Matrix.row(estimation);
     Matrix errorMatrix = estimationMatrix - outputMatrix; //(1xJ)
-    List<double> hiddenOutputs = _layers[1].output();
-    Matrix hiddenMatrix = Matrix.row(hiddenOutputs); //(1xK)
 
-    // Calculate output of the Lauers without activation function applied
-    List<double> hiddenOutputsRaw = _layers[1].summedInputs(inputs);
-    List<double> outputsRaw = _layers[2].summedInputs(hiddenOutputs);
+    // Calculate gradients output layer
+    // -------------------------------------------------------------------------
+    Matrix tmpInputMatrix = _layers[_layers.length - 2].outputMatrix();
+    List<double> tmpInputs = _layers[_layers.length - 2].output();
+    List<double> outputsRaw = _layers.last.summedInputs(tmpInputs);
+    Matrix dSigma = Matrix.row(outputsRaw
+        .map((e) => _layers.last.derivativeActivationFunction(e))
+        .toList());
+    Matrix tmpMatrix = dSigma.multiply(errorMatrix);
+    gradients.add(tmpInputMatrix.transpose() * tmpMatrix); //(KxJ)
+    gradients.add(tmpMatrix); //(1xJ)
 
-    // Calculate derivatives
-    List<double> dSigmaList2 = outputsRaw
-        .map((e) => _layers[2].derivativeActivationFunction(e))
-        .toList();
-    Matrix dSigma2 = Matrix.row(dSigmaList2); //(1xJ)
-    Matrix dLdB2 = dSigma2.multiply(errorMatrix); //(1xJ)
-    Matrix dLdW2 = hiddenMatrix.transpose() * dLdB2; //(KxJ)
+    // Loop though layers
+    for (int i = _layers.length - 2; i >= 1; i--) {
+      tmpInputMatrix = _layers[i - 1].outputMatrix();
+      tmpInputs = _layers[i - 1].output();
+      outputsRaw = _layers[i].summedInputs(tmpInputs);
+      dSigma = Matrix.row(outputsRaw
+          .map((e) => _layers[i].derivativeActivationFunction(e))
+          .toList());
 
-    List<double> dSigmaList1 = hiddenOutputsRaw
-        .map((e) => _layers[1].derivativeActivationFunction(e))
-        .toList();
-    Matrix dSigma1 = Matrix.row(dSigmaList1); // (1xK)
-    Matrix dLdB1 =
-        dSigma1.multiply(dLdB2 * _layers[2].weightMatrix().transpose()); //(1xK)
-    Matrix dLdW1 = inputMatrix.transpose() * dLdB1; // (IxK)
+      tmpMatrix = dSigma
+          .multiply(gradients.last * _layers[i + 1].weightMatrix().transpose());
 
-    return [dLdW1, dLdB1, dLdW2, dLdB2];
+      gradients.add(tmpInputMatrix.transpose() * tmpMatrix);
+      gradients.add(tmpMatrix);
+    }
+
+    return gradients;
   }
 
   void updateWeights(List<Matrix> gradients) {
-    for (var i = 0; i < gradients.length / 2; i += 2) {
-      int tmpLayerNr = (i / 2 + 1).toInt();
-      assert(gradients[i].rowCount == _layers[tmpLayerNr].inputSize,
+    for (int i = 0; i <= gradients.length / 2; i += 2) {
+      int tmpLayerNr = (_layers.length - 1 - i / 2).toInt();
+      Matrix dLdW = gradients[i];
+      Matrix dLdB = gradients[i + 1];
+      // Check gradient sizes
+      // -----------------------------------------------------------------------
+      assert(dLdW.rowCount == _layers[tmpLayerNr].inputSize,
           "ERROR: gradients not compatible with layer size");
-      assert(gradients[i].columnCount == _layers[tmpLayerNr].outputSize,
+      assert(dLdW.columnCount == _layers[tmpLayerNr].outputSize,
           "ERROR: gradients not compatible with layer size");
-      assert(gradients[i + 1].rowCount == 1,
+      assert(dLdB.rowCount == 1,
           "ERROR: gradients not compatible with layer size");
-      assert(gradients[i + 1].columnCount == _layers[tmpLayerNr].outputSize,
+      assert(dLdB.columnCount == _layers[tmpLayerNr].outputSize,
           "ERROR: gradients not compatible with layer size");
-    }
-    Matrix dLdW1 = gradients[0];
-    Matrix dLdB1 = gradients[1];
-    Matrix dLdW2 = gradients[2];
-    Matrix dLdB2 = gradients[3];
 
-    // Update weights
-    _layers[1].weights =
-        matrix2List(Matrix.fromList(_layers[1].weights) - dLdW1 * learningRate);
-    _layers[1].biases =
-        vector2List(Matrix.row(_layers[1].biases) - dLdB1 * learningRate);
-    _layers[2].weights =
-        matrix2List(Matrix.fromList(_layers[2].weights) - dLdW2 * learningRate);
-    _layers[2].biases =
-        vector2List(Matrix.row(_layers[2].biases) - dLdB2 * learningRate);
+      // Update weights
+      _layers[tmpLayerNr].weights = matrix2List(
+          Matrix.fromList(_layers[tmpLayerNr].weights) - dLdW * learningRate);
+      _layers[tmpLayerNr].biases = vector2List(
+          Matrix.row(_layers[tmpLayerNr].biases) - dLdB * learningRate);
+    }
   }
 
   void train(List<List<double>> inputs, List<List<double>> outputs) async {
+    _isTraining = true;
+    notifyListeners();
+    await Future.delayed(const Duration(milliseconds: 100));
+
     for (var j = 0; j < epochs; j++) {
       List<Matrix> totalGradients = [];
       double error = 0;
-      _isTraining = true;
 
       for (var i = 0; i < inputs.length; i++) {
         List<Matrix> gradients = backward(inputs[i], outputs[i]);
@@ -117,7 +123,6 @@ class NeuralNetwork with ChangeNotifier {
         if (tmpError > error) {
           error = tmpError;
         }
-
         if (i == 0) {
           totalGradients = gradients;
         } else {
@@ -131,13 +136,14 @@ class NeuralNetwork with ChangeNotifier {
       }
       updateWeights(totalGradients);
 
-      if (j % epochs / 1000 == 0 && error > 0.05) {
-        notifyListeners();
-        await Future.delayed(Duration(milliseconds: 100));
-      }
+      // if (j % epochs / 1000 == 0 && error > 0.05) {
+      //   notifyListeners();
+      //   await Future.delayed(Duration(milliseconds: 100));
+      // }
     }
     _isTraining = false;
     notifyListeners();
+    //await Future.delayed(Duration(milliseconds: 100));
   }
 
   List<double> subtractLists(List<double> list1, List<double> list2) {
