@@ -14,7 +14,7 @@ class Layer {
       sigmoidDerivative;
   bool applyActivationFuction = true;
   late List<List<double>> weights; // IxJ
-  late List<double> biases; // Jx1
+  late List<double> biases; // 1xJ
   late List<Neuron> neurons;
   late bool isInputLayer;
 
@@ -28,11 +28,13 @@ class Layer {
   // Initialize variables
   // ---------------------------------------------------------------------------
   List<List<double>> initializeWeights() {
+    //return List.generate(inputSize, (i) => List.generate(outputSize, (j) => 0));
     return List.generate(inputSize,
         (i) => List.generate(outputSize, (j) => Random().nextDouble() + 0.5));
   }
 
   List<double> initializeBiases() {
+    return List.generate(outputSize, (j) => 0);
     return List.generate(outputSize, (j) => Random().nextDouble() - 0.5);
   }
 
@@ -55,11 +57,11 @@ class Layer {
     }
 
     Matrix weightMatrix = Matrix.fromList(weights);
-    Matrix biasMatrix = Matrix.column(biases);
-    Matrix inputMatrix = Matrix.column(inputs);
+    Matrix biasMatrix = Matrix.row(biases);
+    Matrix inputMatrix = Matrix.row(inputs);
 
-    Matrix outputMatrix = weightMatrix.transpose() * inputMatrix + biasMatrix;
-    List<double> outputs = outputMatrix.expand((row) => row).toList();
+    Matrix outputMatrix = inputMatrix * weightMatrix + biasMatrix;
+    List<double> outputs = outputMatrix.getRow(0).toList();
     if (applyActivationFuction) {
       for (int j = 0; j < outputSize; j++) {
         outputs[j] = activationFunction(outputs[j]);
@@ -67,6 +69,14 @@ class Layer {
       }
     }
     return outputs;
+  }
+
+  Matrix weightMatrix() {
+    return Matrix.fromList(weights);
+  }
+
+  Matrix biasMatrix() {
+    return Matrix.row(biases);
   }
 
   List<double> output() {
@@ -78,7 +88,7 @@ class Layer {
   }
 
   Matrix outputMatrix() {
-    return Matrix.column(output());
+    return Matrix.row(output());
   }
 
   List<double> summedInputs(List<double> inputs) {

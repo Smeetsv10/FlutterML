@@ -5,8 +5,15 @@ import 'package:neural_network/main.dart';
 import 'package:neural_network/widgets/LayerWidget.dart';
 import 'package:provider/provider.dart';
 
-class NeuralNetworkWidget extends StatelessWidget {
+class NeuralNetworkWidget extends StatefulWidget {
   const NeuralNetworkWidget({super.key});
+
+  @override
+  State<NeuralNetworkWidget> createState() => _NeuralNetworkWidgetState();
+}
+
+class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
+  int inputNr = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +47,13 @@ class NeuralNetworkWidget extends StatelessWidget {
                   child: Text('simulate'),
                 ),
                 onPressed: () {
-                  List<double> input = [
-                    Random().nextInt(2).toDouble(),
-                    Random().nextInt(2).toDouble(),
-                  ];
+                  List<double> input = trainInputs[inputNr];
                   // Calculate new node values
                   neuralNetwork.forward(input);
+                  inputNr += 1;
+                  if (inputNr >= trainInputs.length) {
+                    inputNr = 0;
+                  }
                 }),
           ),
           Padding(
@@ -56,10 +64,8 @@ class NeuralNetworkWidget extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text('train'),
                 ),
-                onPressed: () async {
-                  List<double> errorList =
-                      neuralNetwork.train(trainInputs, trainOutputs);
-                  // print(errorList);
+                onPressed: () {
+                  neuralNetwork.train(trainInputs, trainOutputs);
                 }),
           ),
           Padding(
