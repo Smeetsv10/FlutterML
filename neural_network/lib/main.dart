@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neural_network/classes/NeuralNetwork.dart';
+import 'package:neural_network/functions/readData.dart';
 import 'package:neural_network/widgets/NeuralNetworkWidget.dart';
 import 'package:provider/provider.dart';
 
@@ -19,9 +20,17 @@ List<List<double>> trainOutputs = [
   [0],
 ];
 
-List<int> layers = [2, 4, 3, 1];
+List<int> layers = [2, 2, 1];
 
 void main() {
+  List windData2023 = importData('data/Wind2023.json');
+  List windData2022 = importData('data/Wind2022.json');
+
+  trainInputs = windData2022[0];
+  trainOutputs = windData2022[1];
+  List<List<double>> validateInputs = windData2023[0];
+  List<List<double>> validateOutputs = windData2023[1];
+
   runApp(const MainApp());
 }
 

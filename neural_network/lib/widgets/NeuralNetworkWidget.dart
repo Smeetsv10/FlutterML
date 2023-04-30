@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:neural_network/classes/NeuralNetwork.dart';
 import 'package:neural_network/main.dart';
 import 'package:neural_network/widgets/LayerWidget.dart';
+import 'package:neural_network/widgets/PlotWidget.dart';
 import 'package:provider/provider.dart';
 
 class NeuralNetworkWidget extends StatefulWidget {
@@ -111,6 +112,30 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
                     print('\n');
                     neuralNetwork.notifyListeners();
                   }
+                }),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+                child: Container(
+                  width: 80,
+                  alignment: Alignment.center,
+                  child: const Text('Plot training data'),
+                ),
+                onPressed: () async {
+                  await showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          content:
+                              Text('Hey'), //MyPlotWidget(data: trainInputs),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Close'))
+                          ],
+                        );
+                      });
                 }),
           ),
         ],
