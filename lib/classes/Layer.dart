@@ -16,8 +16,8 @@ class Layer {
 
   late List<List<double>> weights;
   late List<double> biases;
-  late Matrix weightMatrix;
-  late Matrix biasMatrix;
+  late Matrix weightMatrix; // IxJ
+  late Matrix biasMatrix; // 1xJ
 
   Layer(this.neuralNetwork, this.inputSize, this.outputSize, this.layerNr) {
     buildNeurons();
@@ -44,14 +44,15 @@ class Layer {
 
   void initializeBiases() {
     biases = List.filled(outputSize, 0);
-    biasMatrix = Matrix.column(biases);
+    biasMatrix = Matrix.row(biases);
   }
 
   // Forward Propagation
   // ---------------------------------------------------------------------------
   List<double> forwardLinear(List<double> inputs) {
     Matrix inputMatrix = Matrix.column(inputs); // (Ix1)
-    Matrix outputMatrix = weightMatrix.transpose() * inputMatrix + biasMatrix;
+    Matrix outputMatrix =
+        weightMatrix.transpose() * inputMatrix + biasMatrix.transpose(); //(Jx1)
     assert(
       outputMatrix.columnCount == 1,
       'ERROR: Multiple columns for output matrix',
@@ -86,5 +87,9 @@ class Layer {
       outputs.add(neuron.value);
     }
     return outputs;
+  }
+
+  Matrix outputMatrix() {
+    return Matrix.column(outputs());
   }
 }

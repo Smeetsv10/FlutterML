@@ -30,25 +30,38 @@ class NeuronWidget extends StatelessWidget {
     }
 
     return GestureDetector(
-        onDoubleTap: popupText == null
+        onLongPress: popupText == null
             ? () {}
             : () {
-                showDialog(
+                print('longspress');
+                // showDialog(
+                //     context: context,
+                //     builder: (BuildContext context) {
+                //       return AlertDialog(
+                //         content: popupText,
+                //         actions: [
+                //           TextButton(
+                //             child: const Text("Close"),
+                //             onPressed: () {
+                //               Navigator.of(context).pop();
+                //             },
+                //           ),
+                //         ],
+                //       );
+                //     });
+                showMenu(
                     context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        content: popupText,
-                        actions: [
-                          TextButton(
-                            child: const Text("Close"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    });
+                    position: RelativeRect.fromLTRB(
+                      0,
+                      0,
+                      0,
+                      0,
+                    ),
+                    items: [PopupMenuItem(child: popupText)]);
               },
+        onLongPressEnd: (details) {
+          print('ended');
+        },
         onTap: () {},
         child: ArrowElement(
           id: '(${neuron.position[0]},${neuron.position[1]})',

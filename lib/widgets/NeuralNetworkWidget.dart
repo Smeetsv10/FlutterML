@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:neural_network_v2/classes/Activationfunction.dart';
 import 'package:neural_network_v2/classes/NeuralNetwork.dart';
 import 'package:neural_network_v2/widgets/LayerWidget.dart';
 import 'package:provider/provider.dart';
@@ -17,7 +16,6 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
   Widget build(BuildContext context) {
     NeuralNetwork neuralNetwork =
         Provider.of<NeuralNetwork>(context, listen: true);
-    final GlobalKey nnkey = GlobalKey();
 
     Widget predictButton = Padding(
       padding: const EdgeInsets.all(8.0),
@@ -53,12 +51,33 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
         },
       ),
     );
-
+    Widget trainButton = Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: ElevatedButton(
+        child: Container(
+          width: 100,
+          alignment: Alignment.center,
+          child: const Text('Train'),
+        ),
+        onPressed: () {
+          neuralNetwork.train([
+            [0, 0],
+            [0, 1],
+            [1, 0],
+            [1, 1]
+          ], [
+            [0],
+            [1],
+            [1],
+            [0]
+          ]);
+        },
+      ),
+    );
     List<LayerWidget> buildwidgetList() {
       List<LayerWidget> widgetList = [];
       for (var i = 0; i < neuralNetwork.layers.length; i++) {
         widgetList.add(LayerWidget(
-          key: nnkey,
           layer: neuralNetwork.layers[i],
         ));
       }
@@ -83,6 +102,7 @@ class _NeuralNetworkWidgetState extends State<NeuralNetworkWidget> {
         children: [
           predictButton,
           randomizeButton,
+          trainButton,
         ],
       ),
     );
