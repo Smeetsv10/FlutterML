@@ -3,7 +3,8 @@ import 'package:neural_network_v2/classes/NeuralNetwork.dart';
 import 'package:neural_network_v2/widgets/NeuralNetworkWidget.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
       providers: [
