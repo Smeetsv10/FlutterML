@@ -1,3 +1,3 @@
 # neural_network_v2
 
-A new Flutter project.
+Version 2 of a Deep Neural Network representation in flutter
