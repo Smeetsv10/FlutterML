@@ -38,7 +38,7 @@ class LayerWidget extends StatelessWidget {
               outputString += '+';
             }
           } else {
-            if (neuralNetwork.layers[layer.layerNr].biases[neuronIndex] > 0) {
+            if (neuralNetwork.layers[layer.layerNr].biases[neuronIndex] >= 0) {
               outputString += '+';
             }
 
