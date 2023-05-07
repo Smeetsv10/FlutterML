@@ -79,4 +79,12 @@ class Layer {
       neurons[i].value = values[i];
     }
   }
+
+  List<double> outputs() {
+    List<double> outputs = [];
+    for (var neuron in neurons) {
+      outputs.add(neuron.value);
+    }
+    return outputs;
+  }
 }

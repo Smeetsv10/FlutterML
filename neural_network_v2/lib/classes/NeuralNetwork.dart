@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ml_linalg/linalg.dart';
 import 'package:neural_network_v2/classes/Layer.dart';
 import 'package:neural_network_v2/classes/Neuron.dart';
 
@@ -32,4 +33,29 @@ class NeuralNetwork extends ChangeNotifier {
   }
 
   void backward() {}
+
+  List<Matrix> computeGradients(List<double> inputs, List<double> outputs) {
+    assert(inputs.length == layers.first.inputSize);
+    assert(outputs.length == layers.last.outputSize);
+    List<Matrix> gradients = [];
+
+    List<double> estimation = forward(inputs);
+    List<double> error =
+        List.generate(outputs.length, (i) => estimation[i] - outputs[i]);
+
+    // Calculate output layer gradients
+    List<double> tmpInputs = layers[layers.length - 2].outputs();
+    List<double> tmpOutputsRaw = layers.last.forwardLinear(tmpInputs);
+    List<double> dSigma = tmpOutputsRaw
+        .map((e) => layers.last.derivativeActivationFunction(e))
+        .toList();
+    Matrix dLdB = Matrix.column(
+        List.generate(outputs.length, (i) => dSigma[i] * error[i]));
+
+    Matrix dLdW = Matrix.column(tmpInputs) * dLdB;
+    gradients.add(dLdW);
+    gradients.add(dLdB);
+
+    return gradients;
+  }
 }

@@ -49,14 +49,15 @@ class NeuronWidget extends StatelessWidget {
                       );
                     });
               },
+        onTap: () {},
         child: ArrowElement(
           id: '(${neuron.position[0]},${neuron.position[1]})',
           targetIds: generateTargetIds(),
           sourceAnchor: Alignment.centerRight,
           targetAnchor: Alignment.centerLeft,
           bow: 0,
-          tipAngleOutwards: pi * 0.1,
-          color: neuron.isActive ? Colors.red : Colors.blue,
+          tipAngleOutwards: pi * 0,
+          color: neuron.isActive ? Colors.red : Color.fromARGB(255, 0, 70, 107),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Container(
