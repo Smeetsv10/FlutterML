@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:neural_network_v2/classes/NeuralNetwork.dart';
+import 'package:neural_network_v2/pages/data_input_page.dart';
+import 'package:neural_network_v2/pages/homepage.dart';
 import 'package:neural_network_v2/widgets/NeuralNetworkWidget.dart';
 import 'package:provider/provider.dart';
 
@@ -20,6 +22,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: NeuralNetworkWidget());
+    return const MaterialApp(
+      home: HomePage(),
+    );
   }
 }

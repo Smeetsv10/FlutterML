@@ -33,36 +33,31 @@ class NeuronWidget extends StatelessWidget {
         onLongPress: popupText == null
             ? () {}
             : () {
-                print('longspress');
-                // showDialog(
-                //     context: context,
-                //     builder: (BuildContext context) {
-                //       return AlertDialog(
-                //         content: popupText,
-                //         actions: [
-                //           TextButton(
-                //             child: const Text("Close"),
-                //             onPressed: () {
-                //               Navigator.of(context).pop();
-                //             },
-                //           ),
-                //         ],
-                //       );
-                //     });
-                showMenu(
+                showDialog(
                     context: context,
-                    position: RelativeRect.fromLTRB(
-                      0,
-                      0,
-                      0,
-                      0,
-                    ),
-                    items: [PopupMenuItem(child: popupText)]);
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        content: popupText,
+                        actions: [
+                          TextButton(
+                            child: const Text("Close"),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      );
+                    });
+                // showMenu(
+                //     context: context,
+                //     position: RelativeRect.fromLTRB(
+                //       0,
+                //       0,
+                //       0,
+                //       0,
+                //     ),
+                //     items: [PopupMenuItem(child: popupText)]);
               },
-        onLongPressEnd: (details) {
-          print('ended');
-        },
-        onTap: () {},
         child: ArrowElement(
           id: '(${neuron.position[0]},${neuron.position[1]})',
           targetIds: generateTargetIds(),
